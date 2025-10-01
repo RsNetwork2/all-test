@@ -1,0 +1,18 @@
+<script src="https://bradmax.com/client/files/player-js/73a9716fd26717763cd2d46fb9e41463645853de_14815/bradmax_player.js" ></script>
+<div style="width: 890px; height: 500px; background: black;" id="PLAYER_DOM_ID"></div>
+<script type="text/javascript">
+    var config = {
+        dataProvider: {
+            source: [
+                { url: "https://tvsen5.aynascope.net/c9EpzZ6fQBJ3/tracks-v1a1/mono.ts.m3u8?e=1759299268&token=c42815b356ff22bfbe183b2d78aee7bc&u=7a511720-17fc-44bc-a9a7-9222de71898c" }
+            ]
+        }
+    };
+
+    /** find player container in html DOM tree. */
+    var element = document.getElementById("PLAYER_DOM_ID");
+
+    /** create player */
+    var player = window.bradmax.player.create(element, config);
+</script>
+For player documentation see: https://bradmax.com
