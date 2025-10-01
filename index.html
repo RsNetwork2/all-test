@@ -1,141 +1,76 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HLS ভিডিও প্লেয়ার</title>
-    <!-- Tailwind CSS CDN for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- HLS.js CDN for M3U8 playback compatibility -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.11"></script>
+    <title>tvsen7.aynascope.net - live streaming</title>
     <style>
-        /* Custom styles to ensure the video container has an aspect ratio on small screens */
-        .video-container {
-            position: relative;
+        /* CSS styles for player appearance and responsiveness */
+        body, html {
+            margin: 0;
+            padding: 0;
             width: 100%;
-            /* 16:9 Aspect Ratio (56.25% height relative to width) */
-            padding-bottom: 56.25%; 
-            height: 0;
+            height: 100%;
             overflow: hidden;
-            border-radius: 0.75rem; /* rounded-xl */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+            background-color: #000;
         }
-        .video-container video {
-            position: absolute;
-            top: 0;
-            left: 0;
+        #video-container {
+            width: 100%;
+            height: 100%;
+        }
+        #video-player {
             width: 100%;
             height: 100%;
         }
     </style>
+    <!-- Video.js and HLS playback libraries -->
+    <link href="https://vjs.zencdn.net/8.5.2/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.5.2/video.min.js"></script>
+    <script src="https://unpkg.com/@videojs/http-streaming@3.7.0/dist/videojs-http-streaming.min.js"></script>
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4 font-sans">
-    <div class="w-full max-w-4xl bg-white p-6 md:p-8 rounded-xl shadow-2xl border border-gray-100">
-        <!-- Header -->
-        <h1 class="text-3xl font-extrabold text-indigo-700 mb-2 text-center">লাইভ স্ট্রিম প্লেয়ার</h1>
-        <p class="text-sm text-gray-500 mb-6 text-center">আপনার M3U8 লিংকটি স্বয়ংক্রিয়ভাবে লোড করা হয়েছে।</p>
-
-        <!-- Video Player Container -->
-        <div class="video-container">
-            <!-- The video element will display the stream -->
-            <video id="video" controls autoplay class="bg-black w-full h-full"></video>
-        </div>
-
-        <!-- Status Message Area -->
-        <div id="status-message" class="mt-4 p-3 bg-indigo-50 text-indigo-700 rounded-lg text-sm hidden" role="alert">
-            <!-- Dynamic messages will appear here -->
-        </div>
+<body>
+    <!-- Video container for Video.js player -->
+    <div id="video-container">
+        <!-- The data-setup attribute is used by Video.js to initialize the player -->
+        <video id="video-player"
+               class="video-js vjs-default-skin"
+               controls
+               preload="auto"
+               poster=""
+               data-setup='{}'>
+            <!-- Source tag containing your M3U8 URL -->
+            <source src="https://tvsen7.aynascope.net/tsportshd/index.m3u8?e=1759300103&amp;u=7a511720-17fc-44bc-a9a7-9222de71898c&amp;token=191968a5fe9329723d7533be6ff47c2e"
+                    type="application/x-mpegURL">
+            <p class="vjs-no-js">
+                ভিডিওটি দেখতে, অনুগ্রহ করে জাভাস্ক্রিপ্ট সক্ষম করুন এবং এমন একটি ব্রাউজারে আপগ্রেড করুন যা
+                <a href="https://videojs.com/html5-video-support/" target="_blank">HTML5 ভিডিও</a> সমর্থন করে।
+            </p>
+        </video>
     </div>
 
     <script>
-        // Use an IIFE for encapsulation and to run the script immediately
-        (function() {
-            // The M3U8 URL provided by the user
-            const videoUrl = "https://tvsen7.aynascope.net/tsportshd/index.m3u8?e=1759300103&u=7a511720-17fc-44bc-a9a7-9222de71898c&token=191968a5fe9329723d7533be6ff47c2e";
-            const video = document.getElementById('video');
-            const statusMessage = document.getElementById('status-message');
+        // Ensure the video player is correctly initialized and handles errors/autoplay
+        const player = videojs('video-player');
+        
+        // Try to play the video automatically
+        player.ready(function() {
+            const myPlayer = this;
+            myPlayer.play().catch(function(error) {
+                console.error("Autoplay was prevented:", error);
+                // Optionally show a message to the user here to click play manually
+            });
+            
+            // Log when playback is ready
+            myPlayer.on('loadeddata', function() {
+                console.log("Video data loaded and ready for playback.");
+            });
 
-            /**
-             * Shows a status message to the user.
-             * @param {string} message - The message text.
-             * @param {string} type - The type of message ('info', 'error', 'success').
-             */
-            function showStatus(message, type = 'info') {
-                statusMessage.textContent = message;
-                statusMessage.className = 'mt-4 p-3 rounded-lg text-sm block'; // Show the block
-                
-                // Set colors based on message type
-                if (type === 'error') {
-                    statusMessage.classList.add('bg-red-100', 'text-red-700');
-                } else if (type === 'success') {
-                    statusMessage.classList.add('bg-green-100', 'text-green-700');
-                } else { // info/default
-                    statusMessage.classList.add('bg-indigo-50', 'text-indigo-700');
-                }
-            }
-
-            // Check if the HLS.js library is available and supported
-            if (Hls.isSupported()) {
-                showStatus("HLS.js লোড হচ্ছে... (M3U8 স্ট্রিম শুরু হচ্ছে)", 'info');
-                
-                // 1. Create a new HLS instance
-                const hls = new Hls({
-                    // Optional: Configure HLS.js settings here if needed
-                });
-
-                // 2. Bind HLS.js to the video element
-                hls.attachMedia(video);
-
-                // 3. Load the stream URL
-                hls.on(Hls.Events.MEDIA_ATTACHED, function () {
-                    hls.loadSource(videoUrl);
-                });
-
-                // 4. Handle HLS events for better error reporting
-                hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
-                    showStatus(`স্ট্রিম চালু হয়েছে। মোট ${data.levels.length}টি কোয়ালিটি লেভেল পাওয়া গেছে।`, 'success');
-                    // Automatically play the video
-                    video.play().catch(e => {
-                        console.log("Automatic playback failed:", e);
-                        // Show a message asking the user to manually click play
-                        showStatus("ভিডিওটি দেখতে অনুগ্রহ করে প্লে (Play) বাটনে ক্লিক করুন।", 'info');
-                    });
-                });
-
-                hls.on(Hls.Events.ERROR, function (event, data) {
-                    let errorMessage = `প্লেব্যাকের সমস্যা: ${data.details}`;
-                    if (data.fatal) {
-                        errorMessage = `মারাত্মক ত্রুটি! প্লেয়ার বন্ধ হয়ে গেছে। (${data.details})`;
-                        switch (data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR:
-                                errorMessage += " - নেটওয়ার্ক বা লিংকের সমস্যা। লিংকটি মেয়াদোত্তীর্ণ হতে পারে।";
-                                hls.recoverMediaError(); // Attempt to recover
-                                break;
-                            case Hls.ErrorTypes.MEDIA_ERROR:
-                                errorMessage += " - মিডিয়া ডিকোড করার সমস্যা। রিকভার করার চেষ্টা করা হচ্ছে।";
-                                hls.recoverMediaError(); // Attempt to recover
-                                break;
-                            default:
-                                hls.destroy(); // Destroy and prompt reload for other fatal errors
-                                errorMessage += " - পুনরায় লোড করার চেষ্টা করুন।";
-                                break;
-                        }
-                    }
-                    console.error("HLS Error:", data);
-                    showStatus(errorMessage, 'error');
-                });
-            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                // If HLS.js is not supported, check if the browser supports HLS natively (Safari, iOS)
-                showStatus("ব্রাউজার নেটিভ HLS সাপোর্ট করছে।", 'info');
-                video.src = videoUrl;
-                video.addEventListener('loadedmetadata', function() {
-                    video.play();
-                });
-            } else {
-                // Fallback if neither HLS.js nor native support is available
-                showStatus("দুঃখিত, আপনার ব্রাউজারে এই স্ট্রিমটি চালানোর জন্য HLS সাপোর্ট নেই।", 'error');
-            }
-        })();
+            // Handle common stream errors
+            myPlayer.on('error', function(event) {
+                console.error("Video.js Error:", myPlayer.error());
+                // You might show a user-friendly error message here.
+            });
+        });
     </script>
 </body>
 </html>
